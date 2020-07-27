@@ -120,7 +120,8 @@ public class IncomingDataAppResource {
 		String msgSerialized = new Serializer().serializePlainJson(headerMessage);
 		JSONParser parser = new JSONParser();
 		JSONObject jsonObject = (JSONObject) parser.parse(msgSerialized);
-		String header=new Serializer().serializePlainJson(jsonObject);
+		String header = multiPartMessageServiceImpl.getResponseHeader(headerMessage);
+				//new Serializer().serializePlainJson(jsonObject);
 		
 		logger.info("header="+header);
 		logger.info("payload lenght = "+payload.length());
@@ -178,7 +179,7 @@ public class IncomingDataAppResource {
 		
 		// payload will be empty in the multipart message
 //		payload = null;
-		
+		header = multiPartMessageServiceImpl.getResponseHeader(header);
 		// prepare body response - multipart message.
 		MultipartMessage responseMessage = new MultipartMessageBuilder()
 				.withHeaderContent(header)

@@ -9,6 +9,8 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.net.URI;
 import java.nio.charset.StandardCharsets;
+
+import de.fraunhofer.iais.eis.*;
 import org.apache.maven.model.Model;
 import org.apache.http.HttpEntity;
 import org.apache.http.entity.ContentType;
@@ -28,13 +30,6 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 import com.google.gson.JsonObject;
 import com.google.gson.JsonParser;
 
-import de.fraunhofer.iais.eis.Message;
-import de.fraunhofer.iais.eis.RejectionMessageBuilder;
-import de.fraunhofer.iais.eis.RejectionReason;
-import de.fraunhofer.iais.eis.ResultMessageBuilder;
-import de.fraunhofer.iais.eis.Token;
-import de.fraunhofer.iais.eis.TokenBuilder;
-import de.fraunhofer.iais.eis.TokenFormat;
 import de.fraunhofer.iais.eis.ids.jsonld.Serializer;
 import it.eng.idsa.dataapp.service.MultiPartMessageService;
 import it.eng.idsa.multipart.domain.MultipartMessage;
@@ -42,7 +37,7 @@ import it.eng.idsa.multipart.processor.MultipartMessageProcessor;
 import it.eng.idsa.multipart.util.DateUtil;
 
 /**
- * 
+ *
  * @author Milan Karajovic and Gabriele De Luca
  *
  */
@@ -54,7 +49,7 @@ import it.eng.idsa.multipart.util.DateUtil;
 @Service
 @Transactional
 public class MultiPartMessageServiceImpl implements MultiPartMessageService {
-	
+
 	private final static String informationModelVersion = getInformationModelVersion();
 
 	@Override
@@ -113,7 +108,36 @@ public class MultiPartMessageServiceImpl implements MultiPartMessageService {
 	}
 
 
-	@Override
+    @Override
+    public String getResponseHeader(String header) {
+	    Message message = null;
+        if(null == header || header.isEmpty() || "null".equalsIgnoreCase(header)) {
+            message = new MessageBuilder().build();
+        } else
+            message = getIDSMessage(header);
+        return getResponseHeader(message);
+    }
+
+    @Override
+    public String getResponseHeader(Message header) {
+        String output = null;
+        try {
+            if(null == header || null == header.getId() || header.getId().toString().isEmpty())
+                header = new MessageBuilder().build();
+            if (header instanceof ArtifactRequestMessage){
+                output = new Serializer().serializePlainJson(createArtifactResponseMessage(header));
+            } else {
+                output = new Serializer().serializePlainJson(createResultMessage(header));
+            }
+        } catch (JsonProcessingException e) {
+            e.printStackTrace();
+        }
+        return output;
+    }
+
+
+
+    @Override
 	public Message getMessage(Object header) {
 		Message message = null;
 		try {
@@ -135,7 +159,7 @@ public class MultiPartMessageServiceImpl implements MultiPartMessageService {
 			e.printStackTrace();
 		}
 		return message;
-	}  
+	}
 
 	@Override
 	public HttpEntity createMultipartMessage(String header, String payload/*, String boundary, String contentType*/) {
@@ -152,7 +176,7 @@ public class MultiPartMessageServiceImpl implements MultiPartMessageService {
 				e.printStackTrace();
 			}
 			e1.printStackTrace();
-		} 
+		}
 		if(payload!=null) {
 			multipartEntityBuilder.addTextBody("payload", payload);
 		}
@@ -216,13 +240,13 @@ public class MultiPartMessageServiceImpl implements MultiPartMessageService {
 		}
 		return multipartEntityBuilder.build();
 	}
-	
+
 	private static String getInformationModelVersion() {
 		String currnetInformationModelVersion = null;
 		try {
 			MavenXpp3Reader reader = new MavenXpp3Reader();
 			Model model = reader.read(new FileReader("pom.xml"));
-	
+
 			for (int i = 0; i < model.getDependencies().size(); i++) {
 				if (model.getDependencies().get(i).getGroupId().equalsIgnoreCase("de.fraunhofer.iais.eis.ids.infomodel")){
 					String version=model.getDependencies().get(i).getVersion();
@@ -257,6 +281,16 @@ public class MultiPartMessageServiceImpl implements MultiPartMessageService {
 				.build();
 	}
 
+	public Message createArtifactResponseMessage(Message header) {
+		return new ArtifactResponseMessageBuilder()
+				._issuerConnector_(whoIAm())
+				._issued_(DateUtil.now())
+				._modelVersion_(informationModelVersion)
+				._recipientConnector_(asList(header.getIssuerConnector()))
+				._correlationMessage_(header.getId())
+				.build();
+	}
+
 
 	public Message createRejectionMessage(Message header) {
 		return new RejectionMessageBuilder()
@@ -282,7 +316,7 @@ public class MultiPartMessageServiceImpl implements MultiPartMessageService {
 
 
 	private URI whoIAm() {
-		//TODO 
+		//TODO
 		return URI.create("auto-generated");
 	}
 
@@ -319,5 +353,5 @@ public class MultiPartMessageServiceImpl implements MultiPartMessageService {
 				._rejectionReason_(RejectionReason.NOT_FOUND)
 				.build();
 	}
-	
+
 }

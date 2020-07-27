@@ -35,7 +35,8 @@ public class IncomingDataAppResourceOverWs implements PropertyChangeListener {
     private String createDummyResponse(String responseMessageInput) {
         String responseMessageString = null;
         try {
-            String header = multiPartMessageService.getHeader(responseMessageInput);
+            String header = multiPartMessageService.getResponseHeader(responseMessageInput);
+                    //multiPartMessageService.getHeader(responseMessageInput);
             DateFormat dateFormat = new SimpleDateFormat("dd/MM/yyyy HH:mm:ss");
             Date date = new Date();
             String payload="{\"checksum\":\"ABC123 " + dateFormat.format(date) + "\"}";
