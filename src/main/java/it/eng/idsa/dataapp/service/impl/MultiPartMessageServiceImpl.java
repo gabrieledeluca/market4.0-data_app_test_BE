@@ -125,7 +125,7 @@ public class MultiPartMessageServiceImpl implements MultiPartMessageService {
             if(null == header || null == header.getId() || header.getId().toString().isEmpty())
                 header = new MessageBuilder().build();
             if (header instanceof ArtifactRequestMessage){
-                output = new Serializer().serializePlainJson(createArtifactResponseMessage(header));
+                output = new Serializer().serializePlainJson(createArtifactResponseMessage((ArtifactRequestMessage) header));
             } else {
                 output = new Serializer().serializePlainJson(createResultMessage(header));
             }
@@ -281,7 +281,7 @@ public class MultiPartMessageServiceImpl implements MultiPartMessageService {
 				.build();
 	}
 
-	public Message createArtifactResponseMessage(Message header) {
+	public Message createArtifactResponseMessage(ArtifactRequestMessage header) {
 		return new ArtifactResponseMessageBuilder()
 				._issuerConnector_(whoIAm())
 				._issued_(DateUtil.now())
