@@ -13,6 +13,7 @@ import org.json.simple.JSONObject;
 import org.json.simple.parser.JSONParser;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
+import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
@@ -191,6 +192,49 @@ public class IncomingDataAppResource {
 				.body(responseMessageString);
 		
 	}
+	
+		//======================================================================
+		// http-header
+		//======================================================================
+		@RequestMapping(
+	            value = "/routerHttpHeader",
+	            method = RequestMethod.POST,
+	            produces = {MediaType.TEXT_PLAIN_VALUE, MediaType.TEXT_PLAIN_VALUE}
+	    )
+	    @Async
+	    public ResponseEntity<?> routerHttpHeader(@RequestHeader HttpHeaders headers,
+	                                                    @RequestBody(required = false) String payload) throws org.json.simple.parser.ParseException, ParseException, IOException {
+			
+
+//			Map<String, String> headerAsMap = new HashMap<String, String>();
+//			headerAsMap.put("@type", headers.get("IDS-Messagetype").get(0));
+//			headerAsMap.put("@id", headers.get("IDS-Id").get(0));
+//			headerAsMap.put("issued", headers.get("IDS-Issued").get(0));
+//			headerAsMap.put("modelVersion", headers.get("IDS-ModelVersion").get(0));
+//			headerAsMap.put("issuerConnector", headers.get("IDS-IssuerConnector").get(0));
+//			headerAsMap.put("transferContract", headers.get("IDS-TransferContract").get(0));
+//			headerAsMap.put("correlationMessage", headers.get("IDS-CorrelationMessage").get(0));
+			
+//			String header = new ObjectMapper().writerWithDefaultPrettyPrinter().writeValueAsString(headerAsMap);
+			
+			headers.remove("Content-Length");
+			headers.remove("Content-Type");
+			
+			
+			logger.info("headers="+headers);
+			logger.info("payload lenght = "+payload.length());
+			
+			// Put check sum in the payload
+			DateFormat dateFormat = new SimpleDateFormat("yyyy/MM/dd HH:mm:ss");
+			Date date = new Date();
+			payload="{\"checksum\":\"ABC123 " + dateFormat.format(date) + "\"}";
+			
+			return ResponseEntity.ok()
+					.header("generic", "ABC")
+					.header("Content-Type", MediaType.TEXT_PLAIN_VALUE)
+					.body(payload);
+			
+		}
 
 	@PostMapping("/dataAppIncomingMessageSender")
 	public ResponseEntity<?> postMessageSender(@RequestBody String data){
